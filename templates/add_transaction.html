@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Add Transaction - Expense Manager{% endblock %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+
+    <div class="col-md-7 col-lg-6">
+
+        <div class="card shadow-sm">
+
+            <div class="card-body">
+
+                <h2 class="mb-4">
+                    Add Transaction
+                </h2>
+
+                <form method="POST">
+
+                    <!-- Transaction Type -->
+                    <div class="mb-3">
+
+                        <label
+                            for="transaction_type"
+                            class="form-label"
+                        >
+                            Type
+                        </label>
+
+                        <select
+                            class="form-select"
+                            id="transaction_type"
+                            name="transaction_type"
+                            required
+                        >
+
+                            <option
+                                value=""
+                                selected
+                                disabled
+                            >
+                                Select type
+                            </option>
+
+                            <option value="income">
+                                Income
+                            </option>
+
+                            <option value="expense">
+                                Expense
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Amount -->
+                    <div class="mb-3">
+
+                        <label
+                            for="amount"
+                            class="form-label"
+                        >
+                            Amount
+                        </label>
+
+                        <input
+                            type="number"
+                            class="form-control"
+                            id="amount"
+                            name="amount"
+                            min="0.01"
+                            step="0.01"
+                            placeholder="Enter amount"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Category -->
+                    <div class="mb-3">
+
+                        <label
+                            for="category_id"
+                            class="form-label"
+                        >
+                            Category
+                        </label>
+
+                        <select
+                            class="form-select"
+                            id="category_id"
+                            name="category_id"
+                            required
+                        >
+
+                            <option
+                                value=""
+                                selected
+                                disabled
+                            >
+                                Select category
+                            </option>
+
+                            {% for category in categories %}
+
+                                <option
+                                    value="{{ category.id }}"
+                                >
+                                    {{ category.name }}
+                                </option>
+
+                            {% endfor %}
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Description -->
+                    <div class="mb-3">
+
+                        <label
+                            for="description"
+                            class="form-label"
+                        >
+                            Description
+                        </label>
+
+                        <textarea
+                            class="form-control"
+                            id="description"
+                            name="description"
+                            rows="3"
+                            placeholder="Optional description"
+                        ></textarea>
+
+                    </div>
+
+
+                    <!-- Date -->
+                    <div class="mb-3">
+
+                        <label
+                            for="transaction_date"
+                            class="form-label"
+                        >
+                            Date
+                        </label>
+
+                        <input
+                            type="date"
+                            class="form-control"
+                            id="transaction_date"
+                            name="transaction_date"
+                            required
+                        >
+
+                    </div>
+
+
+                    <!-- Save -->
+                    <button
+                        type="submit"
+                        class="btn btn-primary w-100"
+                    >
+                        Save Transaction
+                    </button>
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}
