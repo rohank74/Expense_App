@@ -1,595 +1,278 @@
 # Personal Expense & Budget Manager
 
-個人の収入・支出・予算を管理するためのWebアプリケーションです。
+個人の収入・支出・月別予算を管理するためのFlask Webアプリケーションです。
 
-ユーザーは自分のアカウントを作成し、収入や支出を登録・管理できます。
+ユーザーごとに取引と予算を管理し、Dashboardのグラフで収支状況を確認できます。
 
----
+## 主な機能
 
-## 概要
+- ユーザー登録、ログイン、ログアウト
+- パスワードのハッシュ化
+- 収入・支出の登録、編集、削除
+- カテゴリによる取引管理
+- 説明、カテゴリ、種類、日付による検索・絞り込み
+- 日付または金額による並び替え
+- 取引履歴のCSVエクスポート
+- カテゴリごとの月別予算の登録、編集、削除
+- 予算額、使用額、残額、使用率の表示
+- 月間収入、支出、残高、取引件数の集計
+- Chart.jsによるカテゴリ別支出と月別収支の表示
+- CSRF対策を行ったPOSTフォーム
+- Flask-Migrateによるデータベース変更履歴の管理
 
-このアプリでは、以下のことができます。
+## アプリケーション画面
 
-- ユーザー登録
-- ログイン・ログアウト
-- 収入の登録
-- 支出の登録
-- 取引の編集
-- 取引の削除
-- 取引のカテゴリ管理
-- 月ごとの予算管理
-- 収入・支出の確認
-- グラフによるデータ表示
-- CSVファイルへのエクスポート
-- REST APIによるデータアクセス
+### Login
 
----
+![Login page](screenshots/login.png)
 
-# 使用した技術
+### User Registration
 
-## Backend
+![Registration page](screenshots/register.png)
+
+### Financial Dashboard
+
+![Financial dashboard](screenshots/dashboard.png)
+
+### Dashboard Details
+
+![Dashboard charts and recent transactions](screenshots/dashboard2.png)
+
+### Transactions
+
+![Transactions page](screenshots/transaction.png)
+
+### Monthly Budgets
+
+![Monthly budgets page](screenshots/budget.png)
+
+## 使用技術
+
+### Backend
 
 - Python
 - Flask
+- Flask-SQLAlchemy
 - SQLAlchemy
-
-## Database
-
-- SQLite
-
-## Frontend
-
-- HTML
-- CSS
-- JavaScript
-- Bootstrap
-
-## Authentication
-
 - Flask-Login
-- Werkzeug Password Hashing
+- Flask-WTF
+- Flask-Migrate / Alembic
+- Gunicorn
 
-## Charts
+### Database
 
+- SQLite（デフォルト）
+- `DATABASE_URL`による接続先の設定
+
+### Frontend
+
+- HTML / Jinja
+- CSS
+- Bootstrap
+- JavaScript
 - Chart.js
 
-## Testing
+### Testing
 
-- pytest
+- Python `unittest`
+- Flask test client
 
-## Version Control
+## アーキテクチャ
 
-- Git
-- GitHub
+アプリケーションはFlask Blueprintを使用し、機能と責務ごとに分割しています。
 
----
-
-# 主な機能
-
-## 1. ユーザー登録
-
-ユーザーは自分のアカウントを作成できます。
-
-登録には以下の情報を使用します。
-
-- Name
-- Email
-- Password
-
-パスワードはそのままデータベースに保存しません。
-
-安全のため、パスワードをハッシュ化して保存します。
-
----
-
-## 2. ログイン・ログアウト
-
-登録したEmailとPasswordを使用してログインできます。
-
-ログイン後は、ユーザー専用のページを利用できます。
-
-ログアウトすると、ログインが必要なページにはアクセスできなくなります。
-
----
-
-## 3. 取引の登録
-
-ユーザーは以下の情報を登録できます。
-
-- Income（収入）
-- Expense（支出）
-- Amount（金額）
-- Description（説明）
-- Date（日付）
-- Category（カテゴリ）
-
-例えば、
+- **Model**: データベースのテーブルとリレーションを定義
+- **Route / Controller**: HTTPリクエストを受け取り、レスポンスを返す
+- **Form / Validator**: 入力値の検証と型変換を行う
+- **Service**: データ登録、更新、削除、集計などの業務ロジックを実行
 
 ```text
-Type: Expense
-Amount: ¥1,200
-Category: Food
-Description: Lunch
-Date: 2026-08-30
-```
-
-のようなデータを登録できます。
-
----
-
-# 4. 取引の表示
-
-登録した取引を一覧で確認できます。
-
-表示される情報：
-
-- Date
-- Type
-- Description
-- Amount
-- Category
-
-新しい取引から順番に表示されます。
-
----
-
-# 5. 取引の編集
-
-登録した自分の取引を編集できます。
-
-例えば、
-
-```text
-¥1,000
-```
-
-を
-
-```text
-¥1,200
-```
-
-に変更できます。
-
----
-
-# 6. 取引の削除
-
-不要になった取引を削除できます。
-
-削除する前に確認メッセージが表示されます。
-
----
-
-# 7. カテゴリ
-
-取引にはカテゴリを設定できます。
-
-最初に用意されているカテゴリは以下です。
-
-- Food
-- Transport
-- Shopping
-- Bills
-- Entertainment
-- Other
-
-例えば、
-
-```text
-Food
- ├── Lunch
- ├── Dinner
- └── Restaurant
-```
-
-のように、支出を分かりやすく管理できます。
-
----
-
-# 8. 月ごとの予算
-
-ユーザーは月ごとの予算を設定できます。
-
-例えば、
-
-```text
-August Budget
-
-Budget: ¥100,000
-Spent:  ¥72,000
-Remaining: ¥28,000
-```
-
-のように、予算と実際の支出を比較できます。
-
----
-
-# 9. Dashboard
-
-Dashboardでは、ユーザーの金融情報を確認できます。
-
-例えば、
-
-```text
-Total Income
-Total Expenses
-Balance
-```
-
-などを確認できます。
-
-基本的な残高は、
-
-```text
-Balance = Income - Expenses
-```
-
-で計算します。
-
----
-
-# 10. グラフ
-
-Chart.jsを使用して、データをグラフで表示します。
-
-グラフを使うことで、
-
-- 収入
-- 支出
-- カテゴリごとの支出
-- 予算の使用状況
-
-などを分かりやすく確認できます。
-
----
-
-# 11. CSV Export
-
-取引データをCSVファイルとして保存できます。
-
-CSVファイルはExcelなどでも開くことができます。
-
----
-
-# 12. REST API
-
-登録されている取引データにREST APIからアクセスできるようにします。
-
-APIを使用することで、Web画面以外のアプリケーションからもデータを利用できます。
-
----
-
-# セキュリティ
-
-このアプリでは、ユーザーのデータを他のユーザーから守ることを重要視しています。
-
-## Password
-
-パスワードは平文で保存しません。
-
-例えば、
-
-```text
-Password:
-mypassword123
-```
-
-をそのままデータベースに保存することはありません。
-
-代わりに、
-
-```text
-Password
-   ↓
-Hash
-   ↓
-Database
-```
-
-という形で保存します。
-
----
-
-## Authentication
-
-Authenticationは、
-
-> 「このユーザーは誰ですか？」
-
-を確認する仕組みです。
-
-このアプリではFlask-Loginを使用します。
-
----
-
-## Authorization
-
-Authorizationは、
-
-> 「このユーザーは、このデータを操作してもいいですか？」
-
-を確認する仕組みです。
-
-例えば、
-
-```text
-User 1
- ├── Transaction 1
- ├── Transaction 2
- └── Transaction 3
-
-User 2
- ├── Transaction 4
- └── Transaction 5
-```
-
-User 1はUser 2のTransactionを編集・削除できません。
-
----
-
-# データベース
-
-SQLiteを使用しています。
-
-SQLiteは、別のデータベースサーバーを起動する必要がない、シンプルなデータベースです。
-
-データベースはプロジェクト内に保存されます。
-
-```text
-instance/
-└── expense_manager.db
-```
-
----
-
-# プロジェクト構成
-
-```text
-Expense-app/
-│
+Expense-App/
 ├── app.py
-├── requirements.txt
-├── README.md
-│
+├── expense_app/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── extensions.py
+│   ├── commands.py
+│   ├── models/
+│   │   ├── user.py
+│   │   ├── category.py
+│   │   ├── transaction.py
+│   │   └── budget.py
+│   ├── auth/
+│   │   ├── routes.py
+│   │   ├── forms.py
+│   │   └── service.py
+│   ├── transactions/
+│   │   ├── routes.py
+│   │   ├── forms.py
+│   │   └── service.py
+│   ├── budgets/
+│   │   ├── routes.py
+│   │   ├── forms.py
+│   │   └── service.py
+│   └── dashboard/
+│       ├── routes.py
+│       └── service.py
+├── migrations/
+├── templates/
+├── static/
+├── screenshots/
+├── tests/
 ├── instance/
 │   └── expense_manager.db
-│
-├── templates/
-│   ├── base.html
-│   ├── dashboard.html
-│   ├── login.html
-│   ├── register.html
-│   ├── add_transaction.html
-│   ├── edit_transaction.html
-│   ├── transactions.html
-│   └── ...
-│
-├── static/
-│   └── css/
-│       └── style.css
-│
-├── tests/
-│   └── ...
-│
-└── venv/
+├── .env.example
+├── requirements.txt
+└── README.md
 ```
 
----
+## ローカル環境のセットアップ
 
-# 環境構築
-
-## 1. Pythonを確認
+### 1. リポジトリを取得
 
 ```bash
-python3 --version
+git clone https://github.com/rohank74/Expense_App.git Expense-App
+cd Expense-App
 ```
 
----
+### 2. 仮想環境を作成して有効化
 
-## 2. 仮想環境を作成
+macOS / Linux:
 
 ```bash
-python3 -m venv venv
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
----
+Windows PowerShell:
 
-## 3. 仮想環境を有効にする
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
 
-Macの場合：
+### 3. ライブラリをインストール
 
 ```bash
-source venv/bin/activate
+python -m pip install -r requirements.txt
 ```
 
-有効になると、ターミナルに、
-
-```text
-(venv)
-```
-
-と表示されます。
-
----
-
-# 4. ライブラリをインストール
+### 4. 環境変数ファイルを作成
 
 ```bash
-pip install -r requirements.txt
+cp .env.example .env
 ```
 
----
-
-# アプリケーションを起動
-
-仮想環境を有効にした状態で、
+新しい`SECRET_KEY`を生成します。
 
 ```bash
-flask run
+python -c "import secrets; print(secrets.token_hex(32))"
 ```
 
-を実行します。
+生成された値を`.env`に設定します。
 
-通常、以下のような表示が出ます。
-
-```text
-* Running on http://127.0.0.1:5000
+```dotenv
+SECRET_KEY=生成した秘密鍵
+FLASK_DEBUG=true
+DATABASE_URL=sqlite:///expense_manager.db
 ```
 
-ブラウザで以下を開きます。
+`.env`はGitの管理対象外です。秘密鍵をGitHubへ追加しないでください。
 
-```text
-http://127.0.0.1:5000
-```
-
----
-
-# アプリケーションを停止
-
-ターミナルで、
-
-```text
-Control + C
-```
-
-を押します。
-
----
-
-# Git
-
-Gitの状態を確認：
+### 5. データベースを最新状態にする
 
 ```bash
-git status
+flask --app app db upgrade
+flask --app app seed-categories
 ```
 
-ファイルを追加：
+`db upgrade`は未適用のマイグレーションを適用します。`seed-categories`は不足している初期カテゴリだけを追加するため、複数回実行しても重複しません。
+
+### 6. 開発サーバーを起動
 
 ```bash
-git add .
+python app.py
 ```
 
-Commit：
+ブラウザで `http://127.0.0.1:5000` を開きます。停止する場合はターミナルで `Control + C` を押します。
+
+## 本番用サーバーでの起動
+
+本番環境では、`.env`ファイルではなくホスティングサービスの環境変数設定に、新しい`SECRET_KEY`、`FLASK_DEBUG=false`、`DATABASE_URL`を登録してください。
+
+デプロイ時にマイグレーションを適用します。
 
 ```bash
-git commit -m "Update Expense Manager"
+flask --app app db upgrade
+flask --app app seed-categories
 ```
 
----
-
-# GitHub
-
-GitHubのリポジトリを作成した後、ローカルプロジェクトと接続します。
+Gunicornでアプリケーションを起動します。
 
 ```bash
-git remote add origin <YOUR_GITHUB_REPOSITORY_URL>
+gunicorn --workers 2 --bind 0.0.0.0:$PORT app:app
 ```
 
-その後、
+`python app.py`はローカル開発用です。GunicornはFlaskの開発サーバーとは別の本番向けWSGIサーバーです。
+
+## データベースの変更方法
+
+モデルを変更した後、次のコマンドでマイグレーションを作成します。
 
 ```bash
-git branch -M main
-git push -u origin main
+flask --app app db migrate -m "Describe the database change"
 ```
 
-でGitHubにアップロードできます。
-
----
-
-# テスト
-
-pytestを使用してテストを実行します。
+生成された`migrations/versions/`内のファイルを確認してから適用します。
 
 ```bash
-pytest
+flask --app app db upgrade
 ```
 
-テストが成功すると、成功したテストの数が表示されます。
+現在の状態と未生成の変更を確認できます。
 
----
+```bash
+flask --app app db current
+flask --app app db check
+```
 
-# このプロジェクトで学べること
+直前のマイグレーションを戻す場合は、事前にデータベースをバックアップしてから実行します。
 
-このプロジェクトを通して、以下の技術を学ぶことができます。
+```bash
+flask --app app db downgrade -1
+```
 
-- Python
-- Flask
-- Flask Routing
-- Jinja Template
-- Bootstrap
-- SQLite
-- SQLAlchemy
-- Database Relationship
-- CRUD
-- User Authentication
-- Authorization
-- Password Hashing
-- Session Management
-- Form Validation
-- Flash Messages
-- Chart.js
+## テスト
+
+すべてのテストを実行します。
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+テストでは、認証が必要なページ、HTTPメソッド、CSRF保護、取引・予算の登録処理、入力値の型変換などを確認します。
+
+## セキュリティ
+
+- パスワードはWerkzeugでハッシュ化して保存します。
+- ログイン状態はFlask-Loginで管理します。
+- ユーザーは自分の取引と予算のみ表示・変更できます。
+- POSTフォームはFlask-WTFのCSRFトークンで保護します。
+- ログアウト、削除、登録、更新などの状態変更にはPOSTを使用します。
+- `SECRET_KEY`はソースコードに記載せず、環境変数から取得します。
+- Debugモードは`FLASK_DEBUG`で制御し、本番環境では無効にします。
+- データベース構造の変更はFlask-Migrateで履歴管理します。
+
+## 今後追加できる機能
+
+- ページネーション
+- 予算超過通知
+- CSVインポート
 - REST API
-- CSV Export
-- pytest
-- Git
-- GitHub
-
----
-
-# 今後追加できる機能
-
-今後、以下のような機能を追加することもできます。
-
-- より高度な検索
-- Transaction Filter
-- Pagination
-- より詳しいDashboard
-- 支出カテゴリ別グラフ
-- Budget Alert
-- CSV Exportの改善
-- REST APIの拡張
-- テストの追加
+- テストケースの追加
 - Docker対応
-- Webアプリケーションの公開
+- PostgreSQLなど本番向けデータベースへの対応
 
----
+## ライセンス
 
-# プロジェクトの目的
-
-このプロジェクトは、PythonとFlaskを使用して、実際のWebアプリケーションを最初から段階的に開発することを目的としています。
-
-単純なFlaskアプリケーションから始めて、
-
-```text
-Basic Flask App
-       ↓
-Web Interface
-       ↓
-Database
-       ↓
-User Management
-       ↓
-Authentication
-       ↓
-Transactions
-       ↓
-Categories
-       ↓
-Budgets
-       ↓
-Dashboard
-       ↓
-Charts
-       ↓
-REST API
-       ↓
-CSV Export
-       ↓
-Testing
-```
-
-という形で機能を少しずつ追加しています。
-
-このプロジェクトは、**Python / Flask / SQLAlchemy / SQLiteを使ったWebアプリケーション開発のポートフォリオ**として使用できます。
+ライセンスは現在指定されていません。
