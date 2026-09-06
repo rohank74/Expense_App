@@ -25,7 +25,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
 
-            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+            <a class="navbar-brand" href="{{ url_for('dashboard.dashboard') }}">
                 Expense Manager
             </a>
 
@@ -51,20 +51,20 @@
                         <li class="nav-item">
                             <a
                                 class="nav-link"
-                                href="{{ url_for('dashboard') }}"
+                                href="{{ url_for('dashboard.dashboard') }}"
                             >
                                 Dashboard
                             </a>
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('transactions') }}">
+                            <a class="nav-link" href="{{ url_for('transactions.transactions') }}">
                                 Transactions
                             </a>
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('budgets') }}">
+                            <a class="nav-link" href="{{ url_for('budgets.budgets') }}">
                                 Budget
                             </a>
                         </li>
@@ -74,12 +74,25 @@
                     <ul class="navbar-nav">
 
                         <li class="nav-item">
-                            <a
-                                class="nav-link"
-                                href="{{ url_for('logout') }}"
+                            <form
+                                method="POST"
+                                action="{{ url_for('auth.logout') }}"
                             >
-                                Logout
-                            </a>
+
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token() }}"
+                                >
+
+                                <button
+                                    type="submit"
+                                    class="nav-link border-0 bg-transparent"
+                                >
+                                    Logout
+                                </button>
+
+                            </form>
                         </li>
 
                     </ul>
@@ -92,7 +105,7 @@
                         <li class="nav-item">
                             <a
                                 class="nav-link"
-                                href="{{ url_for('login') }}"
+                                href="{{ url_for('auth.login') }}"
                             >
                                 Login
                             </a>
@@ -101,7 +114,7 @@
                         <li class="nav-item">
                             <a
                                 class="nav-link"
-                                href="{{ url_for('register') }}"
+                                href="{{ url_for('auth.register') }}"
                             >
                                 Register
                             </a>

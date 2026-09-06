@@ -16,6 +16,12 @@
 
             <form method="POST">
 
+                <input
+                    type="hidden"
+                    name="csrf_token"
+                    value="{{ csrf_token() }}"
+                >
+
                 <!-- Transaction Type -->
                 <div class="mb-3">
 
@@ -176,7 +182,7 @@
                     </button>
 
                     <a
-                        href="{{ url_for('transactions') }}"
+                        href="{{ url_for('transactions.transactions') }}"
                         class="btn btn-secondary"
                     >
                         Cancel
