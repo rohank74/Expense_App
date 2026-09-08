@@ -1,0 +1,321 @@
+EXPENSE-APP 変更レポート
+=======================
+
+比較対象
+--------
+変更前:         0cee480^（対象コミットの1つ前のコミット）
+変更後:         0cee480bb08d57ef33719ba7d1b1954baa9d3596
+コミット名:     Refactor app and improve security and documentation
+ブランチ:       dev
+コミット日時:   2026-09-06 21:20:08 +0900
+
+変更規模
+--------
+変更されたファイル: 53ファイル
+追加された行:       1,809行
+削除された行:       3,054行
+
+
+1. アプリケーション構成
+=======================
+
+変更前
+------
+- アプリケーションのほとんどの処理がapp.pyに記述されていました。
+- Model、Route、入力値検証、データベース操作、集計処理が同じファイルに
+  混在していました。
+- app.pyは約2,541行ありました。
+
+変更後
+------
+- app.pyはアプリケーションを起動するための小さなエントリーポイントに
+  なりました。
+- create_app()がFlaskアプリケーションを作成します。
+- Flask拡張機能の初期化を別ファイルへ分離しました。
+- Modelをexpense_app/models/へ分離しました。
+- 機能をauth、transactions、budgets、dashboardに分割しました。
+- 各機能のRoute／Controllerを短くしました。
+- 入力値の検証と型変換をforms.pyへ移動しました。
+- 業務ロジックとデータベース操作をservice.pyへ移動しました。
+- Flask Blueprintを使用して各機能のRouteをアプリケーションへ登録します。
+
+追加された主なアプリケーションファイル:
+
+  expense_app/__init__.py
+  expense_app/config.py
+  expense_app/extensions.py
+  expense_app/commands.py
+  expense_app/models/user.py
+  expense_app/models/category.py
+  expense_app/models/transaction.py
+  expense_app/models/budget.py
+  expense_app/auth/routes.py
+  expense_app/auth/forms.py
+  expense_app/auth/service.py
+  expense_app/transactions/routes.py
+  expense_app/transactions/forms.py
+  expense_app/transactions/service.py
+  expense_app/budgets/routes.py
+  expense_app/budgets/forms.py
+  expense_app/budgets/service.py
+  expense_app/dashboard/routes.py
+  expense_app/dashboard/service.py
+
+
+2. SECRET_KEYと環境変数
+======================
+
+変更前
+------
+- SECRET_KEYがapp.pyへ直接記述されていました。
+
+  app.config["SECRET_KEY"] = "expense-manager-dev-secret-2026"
+
+- ソースコードを取得した人が、公開された同じ値を確認できる状態でした。
+
+変更後
+------
+- SECRET_KEYを環境変数から取得します。
+- SECRET_KEYが設定されていない場合、分かりやすいエラーを表示して
+  アプリケーションを停止します。
+- python-dotenvがローカル環境の.envを読み込みます。
+- .envをGitの管理対象から除外しました。
+- .env.exampleで必要な環境変数を説明し、実際の秘密鍵は保存しません。
+- DATABASE_URLを使用してデータベースの接続先を指定できます。
+
+追加された環境変数の例:
+
+  SECRET_KEY=replace-with-a-random-secret-key
+  FLASK_DEBUG=false
+  DATABASE_URL=sqlite:///expense_manager.db
+
+
+3. Debugモードと本番用サーバー
+==============================
+
+変更前
+------
+- app.pyは常にdebug=Trueで起動していました。
+- Flaskの開発用サーバーだけが設定されていました。
+
+変更後
+------
+- DebugモードをFLASK_DEBUGで制御します。
+- FLASK_DEBUGを設定しない場合、Debugモードはfalseになります。
+- 本番用WSGIサーバーとしてGunicornを追加しました。
+
+ローカル環境での起動コマンド:
+
+  python app.py
+
+本番環境での起動コマンド:
+
+  gunicorn --workers 2 --bind 0.0.0.0:$PORT app:app
+
+
+4. CSRF対策
+===========
+
+変更前
+------
+- POSTフォームでCSRFトークンを検証していませんでした。
+- ログイン状態を変更するLogoutがGETで実装されていました。
+
+変更後
+------
+- Flask-WTFのCSRFProtectをアプリケーション全体で有効化しました。
+- すべてのPOSTフォームへCSRF用のhiddenフィールドを追加しました。
+- CSRFトークンが無効または存在しないリクエストをサーバーが拒否します。
+- LogoutをCSRF対策済みのPOSTフォームへ変更しました。
+- GET /logoutへアクセスするとHTTP 405 Method Not Allowedが返ります。
+
+変更されたテンプレート:
+
+  templates/add_transaction.html
+  templates/base.html
+  templates/budget.html
+  templates/dashboard.html
+  templates/edit_transaction.html
+  templates/login.html
+  templates/register.html
+  templates/transactions.html
+
+
+5. データベースマイグレーション
+================================
+
+変更前
+------
+- アプリケーション起動時にsetup_categories()が実行される構成でした。
+- 起動処理の中にALTER TABLEと既存データの更新処理が含まれていました。
+- データベース構造の変更履歴がマイグレーションとして管理されて
+  いませんでした。
+
+変更後
+------
+- アプリケーション起動時にデータベース構造を変更しません。
+- Flask-MigrateとAlembicでデータベース構造のバージョンを管理します。
+- 既存データベースの開始地点をBaselineマイグレーションとして
+  記録しました。
+- TransactionとCategoryの外部キー制約を追加するマイグレーションを
+  作成しました。
+- 初期カテゴリは、明示的に実行できるCLIコマンドで登録します。
+- 初期カテゴリ登録コマンドは繰り返し実行しても重複しません。
+
+マイグレーション関連のコマンド:
+
+  flask --app app db current
+  flask --app app db check
+  flask --app app db upgrade
+  flask --app app db downgrade -1
+  flask --app app seed-categories
+
+追加されたマイグレーションファイル:
+
+  migrations/versions/a92f5f7b3bd2_baseline_existing_database.py
+  migrations/versions/7997f9891a3f_add_transaction_category_foreign_key.py
+
+既存のinstance/expense_manager.dbを削除せず、そのままアップグレードしました。
+SQLiteがマイグレーションバージョンを保存し、外部キー制約を適用するために
+テーブルを再構築したため、データベースファイルのサイズが変更されています。
+
+
+6. 入力値検証と業務ロジック
+============================
+
+変更前
+------
+- 同じような入力値検証が複数のRoute関数内に重複していました。
+- Transactionの新規登録ではDecimalを使用し、編集ではfloatを使用して
+  いました。
+- Dashboardの集計とBudgetの計算がRoute関数内に記述されていました。
+
+変更後
+------
+- 共通のValidatorが必須チェック、形式チェック、型変換を行います。
+- Transactionの新規登録と編集の両方で金額にDecimalを使用します。
+- 無効な値、無限値、0、マイナスの金額を拒否します。
+- Budgetの月、年、金額、Categoryを同じルールで検証します。
+- Serviceがユーザー登録、認証、Transaction、Budget、CSV出力、
+  Dashboard集計の業務ロジックを担当します。
+- ServiceはユーザーIDを引数として受け取り、current_userへ直接依存しません。
+- Routeは主にリクエスト受付、メッセージ表示、リダイレクト、画面表示を
+  担当します。
+
+
+7. 自動テスト
+=============
+
+変更前
+------
+- この回帰テスト一式はプロジェクトに含まれていませんでした。
+
+変更後
+------
+- unittestを使用した7件のテストを追加しました。
+- テストでは独立したインメモリSQLiteデータベースを使用します。
+- 既存ページとHTTPメソッドを確認します。
+- CSRFトークンが存在しないPOSTリクエストが拒否されることを確認します。
+- TransactionとBudgetの登録処理を確認します。
+- Decimalへの変換と無効な金額の拒否を確認します。
+
+テスト実行コマンド:
+
+  python -m unittest discover -s tests -v
+
+コミット前のテスト結果:
+
+  Ran 7 tests
+  OK
+
+
+8. READMEと画面キャプチャ
+=========================
+
+変更前
+------
+- READMEに古いアプリケーション構成が記載されていました。
+- 現在のアプリケーションに実装されていないpytestとREST APIが、
+  実装済みの機能として記載されていました。
+- アプリケーションの画面キャプチャがありませんでした。
+
+変更後
+------
+- READMEに現在のBlueprint、Validator、Service、Model構成を記載しました。
+- ローカル環境構築、環境変数、マイグレーション、テスト、CSRF、
+  Gunicornの使用方法を記載しました。
+- REST APIを今後追加できる機能として正しく記載しました。
+- 6枚の画面キャプチャをREADMEに表示しました。
+
+追加された画面キャプチャ:
+
+  screenshots/login.png
+  screenshots/register.png
+  screenshots/dashboard.png
+  screenshots/dashboard2.png
+  screenshots/transaction.png
+  screenshots/budget.png
+
+
+9. 依存ライブラリ
+=================
+
+requirements.txtへ追加されたライブラリ:
+
+  alembic==1.19.2
+  Flask-Migrate==4.1.0
+  Flask-WTF==1.3.0
+  gunicorn==26.2.0
+  Mako==1.4.1
+  python-dotenv==1.2.3
+  WTForms==3.2.2
+
+
+10. Gitの安全設定
+=================
+
+新しい.gitignoreで次のファイルをGitの管理対象から除外します。
+
+  .env
+  .venv/
+  .DS_Store
+  __pycache__/
+  *.pyc
+  .pytest_cache/
+  instance/*.before_*.db
+
+実際の.envファイルとmacOSの.DS_Storeファイルはコミットに含まれて
+いません。
+
+
+正確な変更内容を確認する方法
+============================
+
+次のコマンドはExpense-Appディレクトリ内で実行してください。
+
+コミットの概要を確認:
+
+  git show --stat 0cee480
+
+変更されたファイル名と状態を確認:
+
+  git diff --name-status 0cee480^ 0cee480
+
+すべての変更を1行ずつ確認:
+
+  git diff 0cee480^ 0cee480
+
+コミット前のapp.pyを確認:
+
+  git show 0cee480^:app.py
+
+コミット後のapp.pyを確認:
+
+  git show 0cee480:app.py
+
+app.pyだけを比較:
+
+  git diff 0cee480^ 0cee480 -- app.py
+
+注意: CHANGE_REPORT.txtはコミット0cee480の後に作成したファイルです。
+別途コミットしない限り、このファイルはGitHubへ追加されません。
